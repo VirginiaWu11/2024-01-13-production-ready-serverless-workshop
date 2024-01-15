@@ -37,7 +37,7 @@ class CognitoStack extends Stack {
       },
     });
 
-    new UserPoolClient(this, "WebUserPoolClient", {
+    const webUserPoolClient = new UserPoolClient(this, "WebUserPoolClient", {
       userPool,
       authFlows: {
         userSrp: true,
@@ -54,6 +54,7 @@ class CognitoStack extends Stack {
     });
 
     this.cognitoUserPool = userPool;
+    this.webUserPoolClient = webUserPoolClient;
   }
 }
 
