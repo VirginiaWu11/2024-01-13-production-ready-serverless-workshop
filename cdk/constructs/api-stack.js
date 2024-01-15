@@ -4,6 +4,7 @@ const {
   RestApi,
   LambdaIntegration,
   AuthorizationType,
+  CfnAuthorizer,
 } = require("aws-cdk-lib/aws-apigateway");
 const { NodejsFunction } = require("aws-cdk-lib/aws-lambda-nodejs");
 const { PolicyStatement, Effect } = require("aws-cdk-lib/aws-iam");
@@ -73,6 +74,14 @@ class ApiStack extends Stack {
       searchRestaurantsFunction
     );
 
+    const cognitoAuthorizer = new CfnAuthorizer(this, "CognitoAuthorizer", {
+      name: "CognitoAuthorizer",
+      type: "COGNITO_USER_POOLS",
+      identitySource: "method.request.header.Authorization",
+      providerArns: [props.cognitoUserPool.userPoolArn],
+      restApiId: api.restApiId,
+    });
+
     api.root.addMethod("GET", getIndexLambdaIntegration);
     const restaurantsResource = api.root.addResource("restaurants");
     restaurantsResource.addMethod("GET", getRestaurantsLambdaIntegration, {
@@ -80,7 +89,12 @@ class ApiStack extends Stack {
     });
     restaurantsResource
       .addResource("search")
-      .addMethod("POST", searchRestaurantsLambdaIntegration);
+      .addMethod("POST", searchRestaurantsLambdaIntegration, {
+        authorizationType: AuthorizationType.COGNITO,
+        authorizer: {
+          authorizerId: cognitoAuthorizer.ref,
+        },
+      });
 
     const apiInvokePolicy = new PolicyStatement({
       effect: Effect.ALLOW,

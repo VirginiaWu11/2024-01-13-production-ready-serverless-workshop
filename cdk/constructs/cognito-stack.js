@@ -52,6 +52,8 @@ class CognitoStack extends Stack {
       },
       preventUserExistenceErrors: true,
     });
+
+    this.cognitoUserPool = userPool;
   }
 }
 
