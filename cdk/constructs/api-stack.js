@@ -54,16 +54,33 @@ class ApiStack extends Stack {
     });
     props.restaurantsTable.grantReadData(getRestaurantsFunction);
 
+    const searchRestaurantsFunction = new Function(this, "SearchRestaurants", {
+      runtime: Runtime.NODEJS_18_X,
+      handler: "search-restaurants.handler",
+      code: Code.fromAsset("functions"),
+      environment: {
+        default_results: "8",
+        restaurants_table: props.restaurantsTable.tableName,
+      },
+    });
+    props.restaurantsTable.grantReadData(searchRestaurantsFunction);
+
     const getIndexLambdaIntegration = new LambdaIntegration(getIndexFunction);
     const getRestaurantsLambdaIntegration = new LambdaIntegration(
       getRestaurantsFunction
     );
+    const searchRestaurantsLambdaIntegration = new LambdaIntegration(
+      searchRestaurantsFunction
+    );
+
     api.root.addMethod("GET", getIndexLambdaIntegration);
-    api.root
-      .addResource("restaurants")
-      .addMethod("GET", getRestaurantsLambdaIntegration, {
-        authorizationType: AuthorizationType.IAM,
-      });
+    const restaurantsResource = api.root.addResource("restaurants");
+    restaurantsResource.addMethod("GET", getRestaurantsLambdaIntegration, {
+      authorizationType: AuthorizationType.IAM,
+    });
+    restaurantsResource
+      .addResource("search")
+      .addMethod("POST", searchRestaurantsLambdaIntegration);
 
     const apiInvokePolicy = new PolicyStatement({
       effect: Effect.ALLOW,
