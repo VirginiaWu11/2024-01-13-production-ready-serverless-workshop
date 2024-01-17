@@ -1,4 +1,4 @@
-const { Stack, Fn } = require("aws-cdk-lib");
+const { Stack, Fn, CfnOutput } = require("aws-cdk-lib");
 const { Runtime, Code, Function } = require("aws-cdk-lib/aws-lambda");
 const {
   RestApi,
@@ -108,6 +108,10 @@ class ApiStack extends Stack {
       ],
     });
     getIndexFunction.role?.addToPrincipalPolicy(apiInvokePolicy);
+
+    new CfnOutput(this, "ApiUrl", {
+      value: api.url,
+    });
   }
 }
 
