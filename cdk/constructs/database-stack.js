@@ -1,4 +1,4 @@
-const { Stack } = require("aws-cdk-lib");
+const { Stack, RemovalPolicy } = require("aws-cdk-lib");
 const {
   Table,
   AttributeType,
@@ -15,6 +15,7 @@ class DatabaseStack extends Stack {
         type: AttributeType.STRING,
       },
       billingMode: BillingMode.PAY_PER_REQUEST,
+      removalPolicy: RemovalPolicy.SNAPSHOT,
     });
 
     this.restaurantsTable = restaurantstable;
