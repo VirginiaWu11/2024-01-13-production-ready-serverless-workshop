@@ -45,16 +45,21 @@ class CognitoStack extends Stack {
       preventUserExistenceErrors: true,
     });
 
-    new UserPoolClient(this, "ServerUserPoolClient", {
-      userPool,
-      authFlows: {
-        adminUserPassword: true,
-      },
-      preventUserExistenceErrors: true,
-    });
+    const serverUserPoolClient = new UserPoolClient(
+      this,
+      "ServerUserPoolClient",
+      {
+        userPool,
+        authFlows: {
+          adminUserPassword: true,
+        },
+        preventUserExistenceErrors: true,
+      }
+    );
 
     this.cognitoUserPool = userPool;
     this.webUserPoolClient = webUserPoolClient;
+    this.serverUserPoolClient = serverUserPoolClient;
   }
 }
 
