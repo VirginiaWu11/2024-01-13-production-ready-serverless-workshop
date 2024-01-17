@@ -15,7 +15,7 @@ class DatabaseStack extends Stack {
         type: AttributeType.STRING,
       },
       billingMode: BillingMode.PAY_PER_REQUEST,
-      removalPolicy: RemovalPolicy.SNAPSHOT,
+      removalPolicy: RemovalPolicy.DESTROY,
     });
 
     this.restaurantsTable = restaurantstable;
