@@ -1,3 +1,5 @@
+const middy = require("@middy/core");
+const ssm = require("@middy/ssm");
 const { DynamoDB } = require("@aws-sdk/client-dynamodb");
 const {
   DynamoDBDocumentClient,
@@ -6,7 +8,8 @@ const {
 const dynamodbClient = new DynamoDB();
 const dynamodb = DynamoDBDocumentClient.from(dynamodbClient);
 
-const defaultResults = parseInt(process.env.default_results);
+const { service_name, stage_name } = process.env;
+
 const tableName = process.env.restaurants_table;
 
 const findRestaurantsByTheme = async (theme, count) => {
@@ -26,14 +29,26 @@ const findRestaurantsByTheme = async (theme, count) => {
   return resp.Items;
 };
 
-module.exports.handler = async (event, context) => {
+module.exports.handler = middy(async (event, context) => {
   const req = JSON.parse(event.body);
   const theme = req.theme;
-  const restaurants = await findRestaurantsByTheme(theme, defaultResults);
+  const restaurants = await findRestaurantsByTheme(
+    theme,
+    context.config.defaultResults
+  );
   const response = {
     statusCode: 200,
     body: JSON.stringify(restaurants),
   };
 
   return response;
-};
+}).use(
+  ssm({
+    cache: true,
+    cacheExpiry: 1 * 60 * 1000, // 1 mins
+    setToContext: true,
+    fetchData: {
+      config: `/${service_name}/${stage_name}/search-restaurants/config`,
+    },
+  })
+);

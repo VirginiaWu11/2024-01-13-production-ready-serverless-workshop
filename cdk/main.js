@@ -20,6 +20,7 @@ const cognitoStack = new CognitoStack(app, `CognitoStack-${stageName}`, {
   stageName,
 });
 new ApiStack(app, `ApiStack-${stageName}`, {
+  serviceName: "workshop-2024-01",
   stageName,
   restaurantsTable: dbStack.restaurantsTable,
   cognitoUserPool: cognitoStack.cognitoUserPool,
