@@ -51,6 +51,8 @@ class ApiStack extends Stack {
       handler: "handler",
       entry: "functions/get-restaurants.js",
       environment: {
+        middy_cache_enabled: "true",
+        middy_cache_expiry_milliseconds: "60000", // 1 mins
         service_name: props.serviceName,
         stage_name: props.stageName,
         restaurants_table: props.restaurantsTable.tableName,
@@ -77,6 +79,8 @@ class ApiStack extends Stack {
         handler: "handler",
         entry: "functions/search-restaurants.js",
         environment: {
+          middy_cache_enabled: "true",
+          middy_cache_expiry_milliseconds: "60000", // 1 mins
           service_name: props.serviceName,
           stage_name: props.stageName,
           restaurants_table: props.restaurantsTable.tableName,

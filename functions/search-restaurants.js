@@ -1,5 +1,8 @@
 const middy = require("@middy/core");
 const ssm = require("@middy/ssm");
+const middyCacheEnabled = JSON.parse(process.env.middy_cache_enabled);
+const middyCacheExpiry = parseInt(process.env.middy_cache_expiry_milliseconds);
+
 const { DynamoDB } = require("@aws-sdk/client-dynamodb");
 const {
   DynamoDBDocumentClient,
@@ -44,8 +47,8 @@ module.exports.handler = middy(async (event, context) => {
   return response;
 }).use(
   ssm({
-    cache: true,
-    cacheExpiry: 1 * 60 * 1000, // 1 mins
+    cache: middyCacheEnabled,
+    cacheExpiry: middyCacheExpiry,
     setToContext: true,
     fetchData: {
       config: `/${service_name}/${stage_name}/search-restaurants/config`,
