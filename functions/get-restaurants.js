@@ -11,7 +11,7 @@ const {
 const dynamodbClient = new DynamoDB();
 const dynamodb = DynamoDBDocumentClient.from(dynamodbClient);
 
-const { service_name, stage_name } = process.env;
+const { service_name, ssm_stage_name } = process.env;
 
 const tableName = process.env.restaurants_table;
 
@@ -43,7 +43,7 @@ module.exports.handler = middy(async (event, context) => {
     cacheExpiry: middyCacheExpiry,
     setToContext: true,
     fetchData: {
-      config: `/${service_name}/${stage_name}/get-restaurants/config`,
+      config: `/${service_name}/${ssm_stage_name}/get-restaurants/config`,
     },
   })
 );
