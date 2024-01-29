@@ -4,6 +4,7 @@ const cdk = require("aws-cdk-lib");
 const { ApiStack } = require("./constructs/api-stack");
 const { DatabaseStack } = require("./constructs/database-stack");
 const { CognitoStack } = require("./constructs/cognito-stack");
+const { EventsStack } = require("./constructs/events-stack");
 
 const app = new cdk.App();
 let stageName = app.node.tryGetContext("stageName");
@@ -19,18 +20,26 @@ if (!ssmStageName) {
   ssmStageName = stageName;
 }
 
+const serviceName = "workshop-2024-01";
+
 const dbStack = new DatabaseStack(app, `DatabaseStack-${stageName}`, {
   stageName,
 });
 const cognitoStack = new CognitoStack(app, `CognitoStack-${stageName}`, {
   stageName,
 });
+const eventsStack = new EventsStack(app, `EventsStack-${stageName}`, {
+  serviceName,
+  stageName,
+  ssmStageName,
+});
 new ApiStack(app, `ApiStack-${stageName}`, {
-  serviceName: "workshop-2024-01",
+  serviceName,
   stageName,
   ssmStageName,
   restaurantsTable: dbStack.restaurantsTable,
   cognitoUserPool: cognitoStack.cognitoUserPool,
   webUserPoolClient: cognitoStack.webUserPoolClient,
   serverUserPoolClient: cognitoStack.serverUserPoolClient,
+  orderEventBus: eventsStack.orderEventBus,
 });
