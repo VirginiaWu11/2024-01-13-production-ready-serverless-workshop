@@ -33,19 +33,21 @@ describe("Given an authenticated user", () => {
       expect(resp.statusCode).toEqual(200);
     });
 
-    it(`Should publish a message to EventBridge bus`, async () => {
-      expect(mockSend).toHaveBeenCalledTimes(1);
-      const [putEventsCmd] = mockSend.mock.calls[0];
-      expect(putEventsCmd.input).toEqual({
-        Entries: [
-          expect.objectContaining({
-            Source: "big-mouth",
-            DetailType: "order_placed",
-            Detail: expect.stringContaining(`"restaurantName":"Fangtasia"`),
-            EventBusName: process.env.bus_name,
-          }),
-        ],
+    if (process.env.TEST_MODE === "handler") {
+      it(`Should publish a message to EventBridge bus`, async () => {
+        expect(mockSend).toHaveBeenCalledTimes(1);
+        const [putEventsCmd] = mockSend.mock.calls[0];
+        expect(putEventsCmd.input).toEqual({
+          Entries: [
+            expect.objectContaining({
+              Source: "big-mouth",
+              DetailType: "order_placed",
+              Detail: expect.stringContaining(`"restaurantName":"Fangtasia"`),
+              EventBusName: process.env.bus_name,
+            }),
+          ],
+        });
       });
-    });
+    }
   });
 });

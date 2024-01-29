@@ -49,6 +49,9 @@ class ApiStack extends Stack {
         ),
         cognito_user_pool_id: props.cognitoUserPool.userPoolId,
         cognito_client_id: props.webUserPoolClient.userPoolClientId,
+        orders_api: Fn.sub(
+          `https://\${${apiLogicalId}}.execute-api.\${AWS::Region}.amazonaws.com/${props.stageName}/orders`
+        ),
       },
     });
 
