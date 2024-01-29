@@ -14,10 +14,7 @@ class ApiStack extends Stack {
   constructor(scope, id, props) {
     super(scope, id, props);
 
-    new CfnParameter(this, "KmsArnParameter", {
-      type: "AWS::SSM::Parameter::Value<String>",
-      default: `/${props.serviceName}/${props.ssmStageName}/kmsArn`,
-    });
+    this.declareParameters(props);
 
     const api = new RestApi(this, `${props.stageName}-MyApi`, {
       deployOptions: {
@@ -25,6 +22,33 @@ class ApiStack extends Stack {
       },
     });
 
+    const getIndexFunction = this.declareGetIndexFunction(props, api);
+    const getRestaurantsFunction = this.declareGetRestaurantsFunction(props);
+    const searchRestaurantsFunction =
+      this.declareSearchRestaurantsFunction(props);
+    const placeOrderFunction = this.declarePlaceOrderFunction(props);
+
+    this.declareApiEndpoints(props, api, {
+      getIndex: getIndexFunction,
+      getRestaurants: getRestaurantsFunction,
+      searchRestaurants: searchRestaurantsFunction,
+      placeOrder: placeOrderFunction,
+    });
+
+    this.declareOutputs(props, api);
+  }
+
+  declareParameters(props) {
+    new CfnParameter(this, "KmsArnParameter", {
+      type: "AWS::SSM::Parameter::Value<String>",
+      default: `/${props.serviceName}/${props.ssmStageName}/kmsArn`,
+    });
+  }
+
+  /**
+   * @param {RestApi} api
+   */
+  declareGetIndexFunction(props, api) {
     const apiLogicalId = this.getLogicalId(api.node.defaultChild);
 
     const getIndexFunction = new NodejsFunction(this, "GetIndex", {
@@ -47,14 +71,29 @@ class ApiStack extends Stack {
         restaurants_api: Fn.sub(
           `https://\${${apiLogicalId}}.execute-api.\${AWS::Region}.amazonaws.com/${props.stageName}/restaurants`
         ),
-        cognito_user_pool_id: props.cognitoUserPool.userPoolId,
-        cognito_client_id: props.webUserPoolClient.userPoolClientId,
         orders_api: Fn.sub(
           `https://\${${apiLogicalId}}.execute-api.\${AWS::Region}.amazonaws.com/${props.stageName}/orders`
         ),
+        cognito_user_pool_id: props.cognitoUserPool.userPoolId,
+        cognito_client_id: props.webUserPoolClient.userPoolClientId,
       },
     });
 
+    const apiInvokePolicy = new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: ["execute-api:Invoke"],
+      resources: [
+        Fn.sub(
+          `arn:aws:execute-api:\${AWS::Region}:\${AWS::AccountId}:\${${apiLogicalId}}/${props.stageName}/GET/restaurants`
+        ),
+      ],
+    });
+    getIndexFunction.role.addToPrincipalPolicy(apiInvokePolicy);
+
+    return getIndexFunction;
+  }
+
+  declareGetRestaurantsFunction(props) {
     const getRestaurantsFunction = new NodejsFunction(this, "GetRestaurants", {
       runtime: Runtime.NODEJS_18_X,
       handler: "handler",
@@ -80,6 +119,10 @@ class ApiStack extends Stack {
       })
     );
 
+    return getRestaurantsFunction;
+  }
+
+  declareSearchRestaurantsFunction(props) {
     const searchRestaurantsFunction = new NodejsFunction(
       this,
       "SearchRestaurants",
@@ -119,6 +162,10 @@ class ApiStack extends Stack {
       })
     );
 
+    return searchRestaurantsFunction;
+  }
+
+  declarePlaceOrderFunction(props) {
     const placeOrderFunction = new NodejsFunction(this, "PlaceOrder", {
       runtime: Runtime.NODEJS_18_X,
       handler: "handler",
@@ -129,17 +176,13 @@ class ApiStack extends Stack {
     });
     props.orderEventBus.grantPutEventsTo(placeOrderFunction);
 
-    const getIndexLambdaIntegration = new LambdaIntegration(getIndexFunction);
-    const getRestaurantsLambdaIntegration = new LambdaIntegration(
-      getRestaurantsFunction
-    );
-    const searchRestaurantsLambdaIntegration = new LambdaIntegration(
-      searchRestaurantsFunction
-    );
-    const placeOrderLambdaIntegration = new LambdaIntegration(
-      placeOrderFunction
-    );
+    return placeOrderFunction;
+  }
 
+  /**
+   * @param {RestApi} api
+   */
+  declareApiEndpoints(props, api, functions) {
     const cognitoAuthorizer = new CfnAuthorizer(this, "CognitoAuthorizer", {
       name: "CognitoAuthorizer",
       type: "COGNITO_USER_POOLS",
@@ -148,39 +191,40 @@ class ApiStack extends Stack {
       restApiId: api.restApiId,
     });
 
-    api.root.addMethod("GET", getIndexLambdaIntegration);
+    // GET /
+    api.root.addMethod("GET", new LambdaIntegration(functions.getIndex));
+
     const restaurantsResource = api.root.addResource("restaurants");
-    restaurantsResource.addMethod("GET", getRestaurantsLambdaIntegration, {
-      authorizationType: AuthorizationType.IAM,
-    });
+
+    // GET /restaurants
+    restaurantsResource.addMethod(
+      "GET",
+      new LambdaIntegration(functions.getRestaurants),
+      { authorizationType: AuthorizationType.IAM }
+    );
+
+    // POST /restaurants/search
     restaurantsResource
       .addResource("search")
-      .addMethod("POST", searchRestaurantsLambdaIntegration, {
+      .addMethod("POST", new LambdaIntegration(functions.searchRestaurants), {
         authorizationType: AuthorizationType.COGNITO,
         authorizer: {
           authorizerId: cognitoAuthorizer.ref,
         },
       });
+
+    // POST /orders
     api.root
       .addResource("orders")
-      .addMethod("POST", placeOrderLambdaIntegration, {
+      .addMethod("POST", new LambdaIntegration(functions.placeOrder), {
         authorizationType: AuthorizationType.COGNITO,
         authorizer: {
           authorizerId: cognitoAuthorizer.ref,
         },
       });
+  }
 
-    const apiInvokePolicy = new PolicyStatement({
-      effect: Effect.ALLOW,
-      actions: ["execute-api:Invoke"],
-      resources: [
-        Fn.sub(
-          `arn:aws:execute-api:\${AWS::Region}:\${AWS::AccountId}:\${${apiLogicalId}}/${props.stageName}/GET/restaurants`
-        ),
-      ],
-    });
-    getIndexFunction.role?.addToPrincipalPolicy(apiInvokePolicy);
-
+  declareOutputs(props, api) {
     new CfnOutput(this, "ApiUrl", {
       value: api.url,
     });
