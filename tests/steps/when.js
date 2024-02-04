@@ -4,6 +4,25 @@ const URL = require("url");
 const http = require("axios");
 const APP_ROOT = "../../";
 const _ = require("lodash");
+const {
+  EventBridgeClient,
+  PutEventsCommand,
+} = require("@aws-sdk/client-eventbridge");
+
+const viaEventBridge = async (busName, source, detailType, detail) => {
+  const eventBridge = new EventBridgeClient();
+  const putEventsCmd = new PutEventsCommand({
+    Entries: [
+      {
+        Source: source,
+        DetailType: detailType,
+        Detail: JSON.stringify(detail),
+        EventBusName: busName,
+      },
+    ],
+  });
+  await eventBridge.send(putEventsCmd);
+};
 
 const viaHandler = async (event, functionName) => {
   const handler = require(`${APP_ROOT}/functions/${functionName}`).handler;
@@ -128,10 +147,15 @@ const we_invoke_notify_restaurant = async (event) => {
   if (mode === "handler") {
     await viaHandler(event, "notify-restaurant");
   } else {
-    throw new Error("not supported");
+    const busName = process.env.bus_name;
+    await viaEventBridge(
+      busName,
+      event.source,
+      event["detail-type"],
+      event.detail
+    );
   }
 };
-
 module.exports = {
   we_invoke_get_index,
   we_invoke_get_restaurants,
