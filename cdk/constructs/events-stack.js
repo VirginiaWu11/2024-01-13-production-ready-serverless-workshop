@@ -11,6 +11,7 @@ const { Runtime } = require("aws-cdk-lib/aws-lambda");
 const { NodejsFunction } = require("aws-cdk-lib/aws-lambda-nodejs");
 const { Queue } = require("aws-cdk-lib/aws-sqs");
 const { PolicyStatement, ServicePrincipal } = require("aws-cdk-lib/aws-iam");
+const { SqsDestination } = require("aws-cdk-lib/aws-lambda-destinations");
 
 class EventsStack extends Stack {
   constructor(scope, id, props) {
@@ -26,6 +27,7 @@ class EventsStack extends Stack {
       this,
       "RestaurantNotificationTopic"
     );
+    const onFailureQueue = new Queue(this, "OnFailureQueue");
 
     const notifyRestaurantFunction = new NodejsFunction(
       this,
@@ -34,6 +36,7 @@ class EventsStack extends Stack {
         runtime: Runtime.NODEJS_18_X,
         handler: "handler",
         entry: "functions/notify-restaurant.js",
+        onFailure: new SqsDestination(onFailureQueue),
         environment: {
           bus_name: orderEventBus.eventBusName,
           restaurant_notification_topic: restaurantNotificationTopic.topicArn,
