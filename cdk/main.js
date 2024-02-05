@@ -32,6 +32,7 @@ const eventsStack = new EventsStack(app, `EventsStack-${stageName}`, {
   serviceName,
   stageName,
   ssmStageName,
+  idempotencyTable: dbStack.idempotencyTable,
 });
 new ApiStack(app, `ApiStack-${stageName}`, {
   serviceName,
