@@ -65,7 +65,7 @@ class EventsStack extends Stack {
     rule.addTarget(new LambdaFunction(notifyRestaurantFunction));
 
     const alarmTopic = new Topic(this, "AlarmTopic");
-    alarmTopic.addSubscription(new EmailSubscription(process.env.ALARM_EMAIL));
+    alarmTopic.addSubscription(new EmailSubscription(props.ALARM_EMAIL));
 
     const onFailureAlarm = new Alarm(this, "OnFailureQueueAlarm", {
       alarmName: `[${props.stageName}][NotifyRestaurant function] Failed events detected in OnFailure destination`,

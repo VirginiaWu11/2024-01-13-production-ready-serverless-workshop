@@ -4,7 +4,6 @@ const dotenv = require("dotenv");
 dotenv.config({ path: "./.env.local" });
 dotenv.config();
 dotenv.config({ path: "./.env.events" });
-
 let initialized = false;
 
 const init = async () => {

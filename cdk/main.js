@@ -9,6 +9,7 @@ const { EventsStack } = require("./constructs/events-stack");
 const app = new cdk.App();
 let stageName = app.node.tryGetContext("stageName");
 let ssmStageName = app.node.tryGetContext("ssmStageName");
+let ALARM_EMAIL = app.node.tryGetContext("ALARM_EMAIL");
 
 if (!stageName) {
   console.log("Defaulting stage name to dev");
@@ -33,6 +34,7 @@ const eventsStack = new EventsStack(app, `EventsStack-${stageName}`, {
   stageName,
   ssmStageName,
   idempotencyTable: dbStack.idempotencyTable,
+  ALARM_EMAIL,
 });
 new ApiStack(app, `ApiStack-${stageName}`, {
   serviceName,

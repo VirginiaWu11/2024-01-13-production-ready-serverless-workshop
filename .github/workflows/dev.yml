@@ -38,7 +38,7 @@ jobs:
 
       # this provisions a temporary stage called 'dev-ci'
       - name: deploy temp environment
-        run: cdk deploy --all --context stageName=dev-ci --context ssmStageName=dev --require-approval never
+        run: cdk deploy --all --context stageName=dev-ci --context ssmStageName=dev --context ALARM_EMAIL=${{ secrets.ALARM_EMAIL }} --require-approval never
 
       # this generates the .env file for the 'dev-ci' stage
       - name: export env
@@ -61,10 +61,8 @@ jobs:
 
       # delete the 'dev-ci' stage
       - name: destroy temp environment
-        run: cdk destroy --all --context stageName=dev-ci --context ssmStageName=dev --force
+        run: cdk destroy --all --context stageName=dev-ci  --context ALARM_EMAIL=${{ secrets.ALARM_EMAIL }} --force
 
       # deploy to the ACTUAL dev stage
       - name: deploy to dev
-        run: cdk deploy --all --require-approval never
-        env:
-          ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }} # Sets the secret as an environment variable
+        run: cdk deploy --all --context ALARM_EMAIL=${{ secrets.ALARM_EMAIL }} --require-approval never
