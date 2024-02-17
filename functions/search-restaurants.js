@@ -2,6 +2,8 @@ const middy = require("@middy/core");
 const ssm = require("@middy/ssm");
 const middyCacheEnabled = JSON.parse(process.env.middy_cache_enabled);
 const middyCacheExpiry = parseInt(process.env.middy_cache_expiry_milliseconds);
+const { Logger } = require("@aws-lambda-powertools/logger");
+const logger = new Logger({ serviceName: process.env.service_name });
 
 const { DynamoDB } = require("@aws-sdk/client-dynamodb");
 const {
@@ -16,9 +18,7 @@ const { service_name, ssm_stage_name } = process.env;
 const tableName = process.env.restaurants_table;
 
 const findRestaurantsByTheme = async (theme, count) => {
-  console.log(
-    `finding (up to ${count}) restaurants with the theme ${theme}...`
-  );
+  logger.debug("finding restaurants by theme...", { theme, count });
 
   const resp = await dynamodb.send(
     new ScanCommand({
@@ -28,7 +28,9 @@ const findRestaurantsByTheme = async (theme, count) => {
       ExpressionAttributeValues: { ":theme": theme },
     })
   );
-  console.log(`found ${resp.Items.length} restaurants`);
+  logger.debug("found restaurants", {
+    count: resp.Items.length,
+  });
   return resp.Items;
 };
 

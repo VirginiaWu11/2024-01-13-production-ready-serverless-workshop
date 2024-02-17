@@ -2,6 +2,8 @@ const middy = require("@middy/core");
 const ssm = require("@middy/ssm");
 const middyCacheEnabled = JSON.parse(process.env.middy_cache_enabled);
 const middyCacheExpiry = parseInt(process.env.middy_cache_expiry_milliseconds);
+const { Logger } = require("@aws-lambda-powertools/logger");
+const logger = new Logger({ serviceName: process.env.service_name });
 
 const { DynamoDB } = require("@aws-sdk/client-dynamodb");
 const {
@@ -16,7 +18,10 @@ const { service_name, ssm_stage_name } = process.env;
 const tableName = process.env.restaurants_table;
 
 const getRestaurants = async (count) => {
-  console.log(`fetching ${count} restaurants from ${tableName}...`);
+  logger.debug("getting restaurants from DynamoDB...", {
+    count,
+    tableName,
+  });
 
   //   scanCommand is inefficient for large tables
   const resp = await dynamodb.send(
@@ -25,7 +30,9 @@ const getRestaurants = async (count) => {
       Limit: count,
     })
   );
-  console.log(`found ${resp.Items.length} restaurants`);
+  logger.debug("found restaurants", {
+    count: resp.Items.length,
+  });
   return resp.Items;
 };
 
