@@ -26,6 +26,7 @@ const template = fs.readFileSync("static/index.html", "utf-8");
 
 const getRestaurants = async () => {
   logger.debug("getting restaurants...", { url: restaurantsApiRoot });
+  logger.info("getting restaurants...", { url: restaurantsApiRoot });
   const url = URL.parse(restaurantsApiRoot);
   const opts = {
     host: url.hostname,

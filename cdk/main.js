@@ -48,4 +48,4 @@ new ApiStack(app, `ApiStack-${stageName}`, {
   orderEventBus: eventsStack.orderEventBus,
 });
 
-cdk.Aspects.of(app).add(new LambdaEnvVarsAspect(serviceName));
+cdk.Aspects.of(app).add(new LambdaEnvVarsAspect(serviceName, stageName));
