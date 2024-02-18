@@ -15,6 +15,12 @@ const {
 } = require("@aws-sdk/lib-dynamodb");
 const dynamodbClient = new DynamoDB();
 const dynamodb = DynamoDBDocumentClient.from(dynamodbClient);
+const {
+  Tracer,
+  captureLambdaHandler,
+} = require("@aws-lambda-powertools/tracer");
+const tracer = new Tracer({ serviceName: process.env.service_name });
+tracer.captureAWSv3Client(dynamodb);
 
 const { service_name, ssm_stage_name } = process.env;
 
@@ -63,4 +69,5 @@ module.exports.handler = middy(async (event, context) => {
       },
     })
   )
-  .use(injectLambdaContext(logger));
+  .use(injectLambdaContext(logger))
+  .use(captureLambdaHandler(tracer));

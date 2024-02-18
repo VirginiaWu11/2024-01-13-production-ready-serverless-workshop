@@ -2,15 +2,24 @@ const {
   EventBridgeClient,
   PutEventsCommand,
 } = require("@aws-sdk/client-eventbridge");
-const { Logger } = require("@aws-lambda-powertools/logger");
+const {
+  Logger,
+  injectLambdaContext,
+} = require("@aws-lambda-powertools/logger");
 const logger = new Logger({ serviceName: process.env.service_name });
 
 const eventBridge = new EventBridgeClient();
 const chance = require("chance").Chance();
-
+const middy = require("@middy/core");
 const busName = process.env.bus_name;
+const {
+  Tracer,
+  captureLambdaHandler,
+} = require("@aws-lambda-powertools/tracer");
+const tracer = new Tracer({ serviceName: process.env.service_name });
+tracer.captureAWSv3Client(eventBridge);
 
-module.exports.handler = async (event) => {
+module.exports.handler = middy(async (event) => {
   logger.refreshSampleRateCalculation();
   const restaurantName = JSON.parse(event.body).restaurantName;
 
@@ -43,4 +52,6 @@ module.exports.handler = async (event) => {
   };
 
   return response;
-};
+})
+  .use(injectLambdaContext(logger))
+  .use(captureLambdaHandler(tracer));

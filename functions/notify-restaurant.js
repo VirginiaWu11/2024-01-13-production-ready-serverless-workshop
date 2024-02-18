@@ -14,6 +14,12 @@ const {
   injectLambdaContext,
 } = require("@aws-lambda-powertools/logger");
 const middy = require("@middy/core");
+const {
+  Tracer,
+  captureLambdaHandler,
+} = require("@aws-lambda-powertools/tracer");
+const tracer = new Tracer({ serviceName: process.env.service_name });
+tracer.captureAWSv3Client(eventBridge);
 
 const logger = new Logger({ serviceName: process.env.service_name });
 
@@ -59,6 +65,6 @@ const handler = async (event) => {
   return orderId;
 };
 
-module.exports.handler = middy(
-  makeIdempotent(handler, { persistenceStore })
-).use(injectLambdaContext(logger));
+module.exports.handler = middy(makeIdempotent(handler, { persistenceStore }))
+  .use(injectLambdaContext(logger))
+  .use(captureLambdaHandler(tracer));
