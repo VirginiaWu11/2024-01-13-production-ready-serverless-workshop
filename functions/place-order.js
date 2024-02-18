@@ -11,6 +11,7 @@ const chance = require("chance").Chance();
 const busName = process.env.bus_name;
 
 module.exports.handler = async (event) => {
+  logger.refreshSampleRateCalculation();
   const restaurantName = JSON.parse(event.body).restaurantName;
 
   const orderId = chance.guid();

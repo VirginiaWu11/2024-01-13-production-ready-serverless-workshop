@@ -14,6 +14,7 @@ class LambdaEnvVarsAspect {
         node.addEnvironment("LOG_LEVEL", "debug");
       }
       node.addEnvironment("serviceName", this.serviceName);
+      node.addEnvironment("POWERTOOLS_LOGGER_SAMPLE_RATE", "0.1");
     }
   }
 }

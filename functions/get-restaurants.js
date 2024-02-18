@@ -18,6 +18,7 @@ const { service_name, ssm_stage_name } = process.env;
 const tableName = process.env.restaurants_table;
 
 const getRestaurants = async (count) => {
+  logger.refreshSampleRateCalculation();
   logger.debug("getting restaurants from DynamoDB...", {
     count,
     tableName,

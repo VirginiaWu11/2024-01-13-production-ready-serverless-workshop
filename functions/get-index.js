@@ -42,6 +42,8 @@ const getRestaurants = async () => {
 };
 
 module.exports.handler = async (event, context) => {
+  logger.refreshSampleRateCalculation();
+
   const restaurants = await getRestaurants();
   logger.debug("got restaurants", { count: restaurants.length });
   const dayOfWeek = days[new Date().getDay()];
@@ -52,7 +54,7 @@ module.exports.handler = async (event, context) => {
     dayOfWeek,
     restaurants,
     searchUrl: `${restaurantsApiRoot}/search`,
-    placeOrderUrl: ordersApiRoot,
+    placeOrderUrl: `${ordersApiRoot}`,
   };
   const html = Mustache.render(template, view);
   const response = {

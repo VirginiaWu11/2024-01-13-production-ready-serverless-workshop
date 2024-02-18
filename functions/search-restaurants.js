@@ -18,6 +18,7 @@ const { service_name, ssm_stage_name } = process.env;
 const tableName = process.env.restaurants_table;
 
 const findRestaurantsByTheme = async (theme, count) => {
+  logger.refreshSampleRateCalculation();
   logger.debug("finding restaurants by theme...", { theme, count });
 
   const resp = await dynamodb.send(
