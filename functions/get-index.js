@@ -9,6 +9,11 @@ const {
 } = require("@aws-lambda-powertools/logger");
 const logger = new Logger({ serviceName: process.env.service_name });
 const middy = require("@middy/core");
+const {
+  Tracer,
+  captureLambdaHandler,
+} = require("@aws-lambda-powertools/tracer");
+const tracer = new Tracer({ serviceName: process.env.service_name });
 
 const restaurantsApiRoot = process.env.restaurants_api;
 const cognitoUserPoolId = process.env.cognito_user_pool_id;
@@ -42,7 +47,10 @@ const getRestaurants = async () => {
   const httpReq = http.get(restaurantsApiRoot, {
     headers: opts.headers,
   });
-  return (await httpReq).data;
+  const data = (await httpReq).data;
+  tracer.addResponseAsMetadata(data, "GET /restaurants");
+
+  return data;
 };
 
 module.exports.handler = middy(async (event, context) => {
@@ -70,4 +78,6 @@ module.exports.handler = middy(async (event, context) => {
   };
 
   return response;
-}).use(injectLambdaContext(logger));
+})
+  .use(injectLambdaContext(logger))
+  .use(captureLambdaHandler(tracer));
