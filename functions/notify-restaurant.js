@@ -9,7 +9,12 @@ const { makeIdempotent } = require("@aws-lambda-powertools/idempotency");
 const {
   DynamoDBPersistenceLayer,
 } = require("@aws-lambda-powertools/idempotency/dynamodb");
-const { Logger } = require("@aws-lambda-powertools/logger");
+const {
+  Logger,
+  injectLambdaContext,
+} = require("@aws-lambda-powertools/logger");
+const middy = require("@middy/core");
+
 const logger = new Logger({ serviceName: process.env.service_name });
 
 const busName = process.env.bus_name;
@@ -53,4 +58,7 @@ const handler = async (event) => {
 
   return orderId;
 };
-module.exports.handler = makeIdempotent(handler, { persistenceStore });
+
+module.exports.handler = middy(
+  makeIdempotent(handler, { persistenceStore })
+).use(injectLambdaContext(logger));

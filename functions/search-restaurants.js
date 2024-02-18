@@ -2,7 +2,10 @@ const middy = require("@middy/core");
 const ssm = require("@middy/ssm");
 const middyCacheEnabled = JSON.parse(process.env.middy_cache_enabled);
 const middyCacheExpiry = parseInt(process.env.middy_cache_expiry_milliseconds);
-const { Logger } = require("@aws-lambda-powertools/logger");
+const {
+  Logger,
+  injectLambdaContext,
+} = require("@aws-lambda-powertools/logger");
 const logger = new Logger({ serviceName: process.env.service_name });
 
 const { DynamoDB } = require("@aws-sdk/client-dynamodb");
@@ -48,14 +51,16 @@ module.exports.handler = middy(async (event, context) => {
   };
 
   return response;
-}).use(
-  ssm({
-    cache: middyCacheEnabled,
-    cacheExpiry: middyCacheExpiry,
-    setToContext: true,
-    fetchData: {
-      config: `/${service_name}/${ssm_stage_name}/search-restaurants/config`,
-      secretString: `/${service_name}/${ssm_stage_name}/search-restaurants/secretString`,
-    },
-  })
-);
+})
+  .use(
+    ssm({
+      cache: middyCacheEnabled,
+      cacheExpiry: middyCacheExpiry,
+      setToContext: true,
+      fetchData: {
+        config: `/${service_name}/${ssm_stage_name}/search-restaurants/config`,
+        secretString: `/${service_name}/${ssm_stage_name}/search-restaurants/secretString`,
+      },
+    })
+  )
+  .use(injectLambdaContext(logger));
