@@ -6,7 +6,7 @@ const {
   AuthorizationType,
   CfnAuthorizer,
 } = require("aws-cdk-lib/aws-apigateway");
-const { NodejsFunction } = require("aws-cdk-lib/aws-lambda-nodejs");
+const { TracedNodejsFunction } = require("./TracedNodejsFunction");
 const { PolicyStatement, Effect } = require("aws-cdk-lib/aws-iam");
 const { StringParameter } = require("aws-cdk-lib/aws-ssm");
 
@@ -19,6 +19,7 @@ class ApiStack extends Stack {
     const api = new RestApi(this, `${props.stageName}-MyApi`, {
       deployOptions: {
         stageName: props.stageName,
+        tracingEnabled: true,
       },
     });
 
@@ -51,7 +52,7 @@ class ApiStack extends Stack {
   declareGetIndexFunction(props, api) {
     const apiLogicalId = this.getLogicalId(api.node.defaultChild);
 
-    const getIndexFunction = new NodejsFunction(this, "GetIndex", {
+    const getIndexFunction = new TracedNodejsFunction(this, "GetIndex", {
       runtime: Runtime.NODEJS_18_X,
       handler: "handler",
       entry: "functions/get-index.js",
@@ -94,18 +95,22 @@ class ApiStack extends Stack {
   }
 
   declareGetRestaurantsFunction(props) {
-    const getRestaurantsFunction = new NodejsFunction(this, "GetRestaurants", {
-      runtime: Runtime.NODEJS_18_X,
-      handler: "handler",
-      entry: "functions/get-restaurants.js",
-      environment: {
-        middy_cache_enabled: "true",
-        middy_cache_expiry_milliseconds: "60000", // 1 mins
-        service_name: props.serviceName,
-        ssm_stage_name: props.ssmStageName,
-        restaurants_table: props.restaurantsTable.tableName,
-      },
-    });
+    const getRestaurantsFunction = new TracedNodejsFunction(
+      this,
+      "GetRestaurants",
+      {
+        runtime: Runtime.NODEJS_18_X,
+        handler: "handler",
+        entry: "functions/get-restaurants.js",
+        environment: {
+          middy_cache_enabled: "true",
+          middy_cache_expiry_milliseconds: "60000", // 1 mins
+          service_name: props.serviceName,
+          ssm_stage_name: props.ssmStageName,
+          restaurants_table: props.restaurantsTable.tableName,
+        },
+      }
+    );
     props.restaurantsTable.grantReadData(getRestaurantsFunction);
     getRestaurantsFunction.role.addToPrincipalPolicy(
       new PolicyStatement({
@@ -123,7 +128,7 @@ class ApiStack extends Stack {
   }
 
   declareSearchRestaurantsFunction(props) {
-    const searchRestaurantsFunction = new NodejsFunction(
+    const searchRestaurantsFunction = new TracedNodejsFunction(
       this,
       "SearchRestaurants",
       {
@@ -166,7 +171,7 @@ class ApiStack extends Stack {
   }
 
   declarePlaceOrderFunction(props) {
-    const placeOrderFunction = new NodejsFunction(this, "PlaceOrder", {
+    const placeOrderFunction = new TracedNodejsFunction(this, "PlaceOrder", {
       runtime: Runtime.NODEJS_18_X,
       handler: "handler",
       entry: "functions/place-order.js",
