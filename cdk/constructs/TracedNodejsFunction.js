@@ -13,6 +13,7 @@ class TracedNodejsFunction extends NodejsFunction {
    */
   constructor(scope, id, props) {
     props.tracing = Tracing.ACTIVE;
+    props.memorySize = props.memorySize || 1024;
 
     super(scope, id, props);
   }
